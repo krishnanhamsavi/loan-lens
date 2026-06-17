@@ -1,0 +1,15 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+.display { font-family: var(--font-display); }
+.mono { font-family: var(--font-mono); }
+button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid #b07d2b; outline-offset: 2px;
+}
