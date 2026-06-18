@@ -2,11 +2,15 @@
 import { NextResponse } from "next/server";
 import { buildFacts } from "../../../lib/loan";
 import { BRIEF_SYSTEM } from "../../../lib/prompts";
+import { rateLimit } from "../../../lib/ratelimit";
 
 export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
+    const limited = await rateLimit(req);
+    if (limited) return limited;
+
     const { type, inputs, variable, extra } = await req.json();
 
     if (!inputs || !(inputs.amount > 0) || !(inputs.years > 0)) {

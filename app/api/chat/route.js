@@ -1,11 +1,15 @@
 // app/api/chat/route.js
 import { NextResponse } from "next/server";
 import { CHAT_SYSTEM } from "../../../lib/prompts";
+import { rateLimit } from "../../../lib/ratelimit";
 
 export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
+    const limited = await rateLimit(req);
+    if (limited) return limited;
+
     const { facts, messages } = await req.json();
     if (!facts || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
