@@ -300,11 +300,11 @@ export default function LoanLens() {
             LOAN LENS
           </div>
           <h1 className="display" style={{ fontWeight: 600, fontSize: 40, lineHeight: 1.05, margin: "0 0 10px", letterSpacing: -0.5 }}>
-            See what the loan really costs.
+            See what a loan really costs.
           </h1>
           <p style={{ fontSize: 16, lineHeight: 1.5, color: C.inkSoft, maxWidth: 520, margin: 0 }}>
-            Enter a car or home loan offer. Get the total cost, the catches, and
-            the questions to ask, so you can decide. It won't decide for you.
+            Enter a car or home loan offer. See the total cost over its life,
+            where your rate sits, and the terms worth questioning before you sign.
           </p>
         </header>
 
@@ -348,8 +348,8 @@ export default function LoanLens() {
 
                 {facts.home_costs && <HomeCostBreakdown hc={facts.home_costs} />}
                 {facts.rate_comparison && <RateCompare rc={facts.rate_comparison} type={facts.loan_type} />}
-                {facts.underwater && facts.underwater.ever_underwater && (
-                  <UnderwaterNote uw={facts.underwater} years={facts.term_years} />
+                {facts.underwater && (
+                  <NegativeEquityPanel uw={facts.underwater} price={facts.price} down={facts.down_payment} years={facts.term_years} />
                 )}
 
                 <TermTable facts={facts} />
@@ -357,6 +357,11 @@ export default function LoanLens() {
                 <section style={{ marginBottom: 28 }}>
                   {loading && !brief && <div style={{ color: C.inkSoft, fontSize: 15 }}>Writing your brief…</div>}
                   {brief && renderBrief(brief)}
+                  {facts.extra_terms_user_pasted === "(none provided)" && (
+                    <div style={{ fontSize: 13, color: C.inkSoft, marginTop: 12 }}>
+                      You did not paste any fees or add-ons. If your offer includes them, paste them above for a sharper read.
+                    </div>
+                  )}
                 </section>
 
                 <section style={{ marginTop: 32, borderTop: `1px solid ${C.line}`, paddingTop: 24 }}>
@@ -681,31 +686,36 @@ function RateCompare({ rc, type }) {
         {rc.worth_shopping && " Worth asking the lender if you qualify for a better rate, or checking a credit union."}
       </div>
       <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 6 }}>
-        Reference ranges as of {rc.as_of}. These are rough estimates, not a quote.
+        Typical ranges as of {rc.as_of}, estimates only.
       </div>
     </section>
   );
 }
 
-// Car only: the approximate underwater window, computed in code with stated
-// depreciation assumptions. Framed as an estimate, never a prediction, and
-// never advice on whether to take the loan.
-function UnderwaterNote({ uw, years }) {
+// Car only: loan-to-value at signing plus the negative equity window, computed
+// in code from a named depreciation curve. States the actual crossover month or
+// flags full-term negative equity. An estimate with stated assumptions, never a
+// prediction and never advice on whether to take the loan.
+function NegativeEquityPanel({ uw, price, down, years }) {
+  const underwater = uw.ever_underwater;
   return (
-    <section style={{ background: C.rustSoft, border: `1px solid ${C.line}`, borderRadius: 10, padding: "16px 18px", marginBottom: 16 }}>
-      <div className="mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: C.rust, marginBottom: 8 }}>
-        Underwater estimate
+    <section style={{ background: underwater ? C.rustSoft : C.paper, border: `1px solid ${C.line}`, borderRadius: 10, padding: "16px 18px", marginBottom: 16 }}>
+      <div className="mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: underwater ? C.rust : C.inkSoft, marginBottom: 8 }}>
+        Negative equity
       </div>
       <div style={{ fontSize: 15, lineHeight: 1.5, color: C.ink }}>
-        {uw.stays_underwater_whole_loan ? (
-          <>On this {years} year loan, you would likely owe more than the car is worth for most or all of the term.</>
+        You put {fmtUSD(down)} down on a {fmtUSD(price)} car, so you are financing{" "}
+        <strong>{uw.financed_percent}%</strong> of its value.{" "}
+        {uw.full_term_underwater ? (
+          <>On a typical depreciation curve the balance stays above the car's resale value for the whole term, so you would be underwater the entire loan. That is a real risk, and it is exactly when GAP insurance matters.</>
+        ) : underwater ? (
+          <>On a typical depreciation curve you are underwater until about <strong>month {uw.crossover_month}</strong>, when the balance falls below the car's resale value. If you sell or total the car before then, you would owe more than it is worth, which is why GAP insurance matters here.</>
         ) : (
-          <>On this {years} year loan, you would probably be underwater until around <strong>year {uw.clears_about_year}</strong>, meaning you would owe more than the car is worth.</>
-        )}{" "}
-        If you sell or total the car before then, you would owe more than it is worth, which is why GAP insurance matters here.
+          <>On a typical depreciation curve the car's resale value stays above your balance throughout, so negative equity is not a concern on this offer.</>
+        )}
       </div>
       <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 6 }}>
-        A rough estimate assuming the car loses about 20% of its value in the first year and about 15% each year after. Not a prediction.
+        Assumes the car loses about 10% the moment you drive off, about 20% in the first year, then about 15% each year after. A rough estimate, not a prediction.
       </div>
     </section>
   );
